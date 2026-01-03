@@ -121,7 +121,11 @@ export default function GameCanvas({
   // ============================================
   useEffect(() => {
     // Connexion au serveur WebSocket
-    const socket = io("http://localhost:5000");
+    const socket = io(
+      process.env.NEXT_PUBLIC_WS_URL ||
+        process.env.NEXT_PUBLIC_API_URL ||
+        "http://localhost:5000"
+    );
     socketRef.current = socket;
 
     socket.on("connect", () => {
