@@ -205,6 +205,15 @@ export default function GameCanvas({
     socket.on("game:error", (error) => {
       console.error("❌ Erreur:", error);
       alert(error.message);
+      // Redirige vers le dashboard en cas d'erreur critique
+      if (
+        error.message.includes("n'est plus connecté") ||
+        error.message.includes("introuvable") ||
+        error.message.includes("déjà commencé") ||
+        error.message.includes("terminée")
+      ) {
+        setTimeout(() => router.push("/dashboard"), 1500);
+      }
     });
 
     // Nettoyage à la déconnexion

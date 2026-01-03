@@ -27,8 +27,33 @@ export default async function GamePage({ params }: PageProps) {
     redirect("/dashboard");
   }
 
+  const game = gameResult.data;
+
+  // Vérifie si l'utilisateur peut accéder à cette partie
+  const isPlayer1 = game.player1Id === userId;
+  const isPlayer2 = game.player2Id === userId;
+  const isParticipant = isPlayer1 || isPlayer2;
+
+  // Si la partie est annulée ou terminée et que l'utilisateur n'est pas participant
+  if (
+    (game.status === "cancelled" || game.status === "finished") &&
+    !isParticipant
+  ) {
+    redirect("/dashboard");
+  }
+
+  // Si la partie est annulée, même les participants sont redirigés
+  if (game.status === "cancelled") {
+    redirect("/dashboard");
+  }
+
+  // Si la partie est en cours et que l'utilisateur n'est pas un des joueurs
+  if (game.status === "playing" && !isParticipant) {
+    redirect("/dashboard");
+  }
+
   // Détermine si l'utilisateur actuel est le créateur (player1)
-  const isCreator = gameResult.data.player1Id === userId;
+  const isCreator = isPlayer1;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">

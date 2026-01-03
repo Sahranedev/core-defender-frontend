@@ -1,69 +1,50 @@
 import Link from "next/link";
+import { LuShield, LuZap, LuUsers, LuArrowRight } from "react-icons/lu";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500">
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
+    <div className="min-h-screen bg-zinc-950">
+      {/* Grid pattern background */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+
+      <div className="relative min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-5xl mx-auto text-center space-y-12">
           {/* Logo/Icon */}
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full mb-8">
-            <svg
-              className="w-12 h-12 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-              />
-            </svg>
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-zinc-900 border-2 border-cyan-500/30 rounded-xl">
+            <LuShield className="w-10 h-10 text-cyan-400" />
           </div>
 
           {/* Title */}
-          <div className="space-y-4">
-            <h1 className="text-5xl md:text-7xl font-bold text-white">
-              Core Defender
+          <div className="space-y-6">
+            <h1 className="text-6xl md:text-8xl font-black text-white tracking-tight">
+              CORE <span className="text-cyan-400">DEFENDER</span>
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto">
-              Bienvenue dans le jeu de stratégie en temps réel
+            <p className="text-xl md:text-2xl text-zinc-400 max-w-2xl mx-auto font-medium">
+              Jeu de stratégie en temps réel multijoueur
             </p>
           </div>
 
           {/* Description */}
-          <p className="text-lg text-white/80 max-w-xl mx-auto">
-            Connectez-vous pour rejoindre la partie et construire votre empire
+          <p className="text-lg text-zinc-500 max-w-xl mx-auto">
+            Construisez votre empire, défendez votre territoire et dominez le
+            classement mondial
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
             <Link
               href="/login"
-              className="group relative px-8 py-4 bg-white text-purple-600 font-semibold rounded-lg hover:bg-gray-100 transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-1 min-w-[200px]"
+              className="group relative px-8 py-4 bg-cyan-500 text-zinc-950 font-bold rounded-lg hover:bg-cyan-400 transition-all hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] transform hover:scale-105 min-w-[220px] uppercase text-sm tracking-wide"
             >
               <span className="flex items-center justify-center gap-2">
                 Se connecter
-                <svg
-                  className="w-5 h-5 group-hover:translate-x-1 transition-transform"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 7l5 5m0 0l-5 5m5-5H6"
-                  />
-                </svg>
+                <LuArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </span>
             </Link>
 
             <Link
               href="/signup"
-              className="group px-8 py-4 bg-transparent border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-purple-600 transition-all shadow-xl min-w-[200px]"
+              className="group px-8 py-4 bg-zinc-900 border-2 border-zinc-800 text-white font-bold rounded-lg hover:border-cyan-500/50 hover:bg-zinc-800 transition-all min-w-[220px] uppercase text-sm tracking-wide"
             >
               Créer un compte
             </Link>
@@ -71,74 +52,44 @@ export default function Home() {
 
           {/* Features */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-16">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 space-y-3">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-lg">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 space-y-4 hover:border-cyan-500/30 transition-all group">
+              <div className="inline-flex items-center justify-center w-14 h-14 bg-zinc-800 rounded-lg group-hover:bg-cyan-500/10 transition-all">
+                <LuZap className="w-7 h-7 text-cyan-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white">Temps Réel</h3>
-              <p className="text-white/70">
-                Jouez en temps réel avec Socket.IO
+              <h3 className="text-xl font-bold text-white uppercase tracking-wide">
+                Temps Réel
+              </h3>
+              <p className="text-zinc-500">Action instantanée avec Socket.IO</p>
+            </div>
+
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 space-y-4 hover:border-cyan-500/30 transition-all group">
+              <div className="inline-flex items-center justify-center w-14 h-14 bg-zinc-800 rounded-lg group-hover:bg-cyan-500/10 transition-all">
+                <LuUsers className="w-7 h-7 text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white uppercase tracking-wide">
+                Multijoueur
+              </h3>
+              <p className="text-zinc-500">
+                Affrontez des joueurs du monde entier
               </p>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 space-y-3">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-lg">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 space-y-4 hover:border-cyan-500/30 transition-all group">
+              <div className="inline-flex items-center justify-center w-14 h-14 bg-zinc-800 rounded-lg group-hover:bg-cyan-500/10 transition-all">
+                <LuShield className="w-7 h-7 text-cyan-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white">Multijoueur</h3>
-              <p className="text-white/70">
-                Affrontez d&apos;autres joueurs en ligne
+              <h3 className="text-xl font-bold text-white uppercase tracking-wide">
+                Sécurisé
+              </h3>
+              <p className="text-zinc-500">
+                Protection de vos données garantie
               </p>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 space-y-3">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-lg">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-white">Sécurisé</h3>
-              <p className="text-white/70">Vos données sont protégées</p>
             </div>
           </div>
 
           {/* Footer */}
-          <p className="text-white/60 text-sm pt-8">
-            © 2025 Core Defender. Tous droits réservés.
+          <p className="text-zinc-600 text-sm pt-12 font-medium">
+            © 2025 CORE DEFENDER — TOUS DROITS RÉSERVÉS
           </p>
         </div>
       </div>

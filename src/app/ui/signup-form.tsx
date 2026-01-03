@@ -2,6 +2,7 @@
 
 import { signup } from "@/app/actions/users";
 import { useActionState } from "react";
+import { LuUser, LuMail, LuLock, LuCircleX } from "react-icons/lu";
 
 export default function SignupForm() {
   const [state, action, pending] = useActionState(signup, undefined);
@@ -12,33 +13,21 @@ export default function SignupForm() {
       <div className="space-y-2">
         <label
           htmlFor="lastname"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-bold text-zinc-300 uppercase tracking-wide"
         >
           Nom
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg
-              className="h-5 w-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
+            <LuUser className="h-5 w-5 text-zinc-500" />
           </div>
           <input
             id="lastname"
             name="lastname"
             type="text"
-            placeholder="Votre nom complet"
+            placeholder="Votre nom"
             required
-            className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none text-gray-900 placeholder-gray-400"
+            className="block w-full pl-10 pr-3 py-3 bg-zinc-800 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all outline-none text-white placeholder-zinc-500"
           />
         </div>
         {state?.errors?.lastname && (
@@ -46,19 +35,9 @@ export default function SignupForm() {
             {state.errors.lastname.map((error) => (
               <p
                 key={error}
-                className="text-sm text-red-600 flex items-center gap-1"
+                className="text-sm text-red-400 flex items-center gap-1"
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <LuCircleX className="w-4 h-4" />
                 {error}
               </p>
             ))}
@@ -69,33 +48,21 @@ export default function SignupForm() {
       <div className="space-y-2">
         <label
           htmlFor="firstname"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-bold text-zinc-300 uppercase tracking-wide"
         >
           Prénom
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg
-              className="h-5 w-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
+            <LuUser className="h-5 w-5 text-zinc-500" />
           </div>
           <input
             id="firstname"
             name="firstname"
             type="text"
-            placeholder="Votre nom complet"
+            placeholder="Votre prénom"
             required
-            className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none text-gray-900 placeholder-gray-400"
+            className="block w-full pl-10 pr-3 py-3 bg-zinc-800 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all outline-none text-white placeholder-zinc-500"
           />
         </div>
         {state?.errors?.firstname && (
@@ -103,19 +70,9 @@ export default function SignupForm() {
             {state.errors.firstname.map((error) => (
               <p
                 key={error}
-                className="text-sm text-red-600 flex items-center gap-1"
+                className="text-sm text-red-400 flex items-center gap-1"
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <LuCircleX className="w-4 h-4" />
                 {error}
               </p>
             ))}
@@ -127,25 +84,13 @@ export default function SignupForm() {
       <div className="space-y-2">
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-bold text-zinc-300 uppercase tracking-wide"
         >
           Email
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg
-              className="h-5 w-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
-              />
-            </svg>
+            <LuMail className="h-5 w-5 text-zinc-500" />
           </div>
           <input
             id="email"
@@ -153,7 +98,7 @@ export default function SignupForm() {
             type="email"
             placeholder="votre.email@exemple.com"
             required
-            className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none text-gray-900 placeholder-gray-400"
+            className="block w-full pl-10 pr-3 py-3 bg-zinc-800 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all outline-none text-white placeholder-zinc-500"
           />
         </div>
         {state?.errors?.email && (
@@ -161,19 +106,9 @@ export default function SignupForm() {
             {state.errors.email.map((error) => (
               <p
                 key={error}
-                className="text-sm text-red-600 flex items-center gap-1"
+                className="text-sm text-red-400 flex items-center gap-1"
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <LuCircleX className="w-4 h-4" />
                 {error}
               </p>
             ))}
@@ -185,25 +120,13 @@ export default function SignupForm() {
       <div className="space-y-2">
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-bold text-zinc-300 uppercase tracking-wide"
         >
           Mot de passe
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg
-              className="h-5 w-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
+            <LuLock className="h-5 w-5 text-zinc-500" />
           </div>
           <input
             id="password"
@@ -211,31 +134,21 @@ export default function SignupForm() {
             type="password"
             placeholder="••••••••"
             required
-            className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none text-gray-900"
+            className="block w-full pl-10 pr-3 py-3 bg-zinc-800 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all outline-none text-white placeholder-zinc-500"
           />
         </div>
         {state?.errors?.password && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1">
-            <p className="text-sm font-medium text-amber-800">
+          <div className="bg-amber-950/50 border border-amber-800 rounded-lg p-3 space-y-1">
+            <p className="text-sm font-medium text-amber-400">
               Le mot de passe doit :
             </p>
             <ul className="space-y-1">
               {state.errors.password.map((error) => (
                 <li
                   key={error}
-                  className="text-sm text-amber-700 flex items-start gap-2"
+                  className="text-sm text-amber-400/80 flex items-start gap-2"
                 >
-                  <svg
-                    className="w-4 h-4 mt-0.5 flex-shrink-0"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <LuCircleX className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   {error}
                 </li>
               ))}
@@ -246,18 +159,8 @@ export default function SignupForm() {
 
       {/* Global Error Message */}
       {state?.message && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-2">
-          <svg
-            className="w-5 h-5 mt-0.5 flex-shrink-0"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-              clipRule="evenodd"
-            />
-          </svg>
+        <div className="bg-red-950/50 border border-red-800 text-red-400 px-4 py-3 rounded-lg flex items-start gap-2">
+          <LuCircleX className="w-5 h-5 mt-0.5 flex-shrink-0" />
           <span className="text-sm">{state.message}</span>
         </div>
       )}
@@ -266,34 +169,9 @@ export default function SignupForm() {
       <button
         disabled={pending}
         type="submit"
-        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-purple-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+        className="w-full bg-cyan-500 text-zinc-950 font-bold py-3 px-4 rounded-lg hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-zinc-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] uppercase tracking-wide"
       >
-        {pending ? (
-          <span className="flex items-center justify-center gap-2">
-            <svg
-              className="animate-spin h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            Création en cours...
-          </span>
-        ) : (
-          "Créer mon compte"
-        )}
+        {pending ? "Création en cours..." : "Créer mon compte"}
       </button>
     </form>
   );

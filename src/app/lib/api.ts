@@ -40,9 +40,13 @@ export async function getAvailableGames(token: string) {
 }
 
 /**
- * Crée une nouvelle partie
+ * Crée une nouvelle partie (publique ou privée)
  */
-export async function createGame(token: string, player1Id: number) {
+export async function createGame(
+  token: string,
+  player1Id: number,
+  isPrivate = false
+) {
   try {
     const response = await fetch(`${API_BASE_URL}/games/create`, {
       method: "POST",
@@ -50,7 +54,7 @@ export async function createGame(token: string, player1Id: number) {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ player1Id }),
+      body: JSON.stringify({ player1Id, isPrivate }),
       cache: "no-store",
     });
 
@@ -68,6 +72,41 @@ export async function createGame(token: string, player1Id: number) {
     };
   } catch (error) {
     console.error("Create game error:", error);
+    return {
+      success: false,
+      error: "Une erreur est survenue",
+    };
+  }
+}
+
+/**
+ * Récupère une partie par son code privé
+ */
+export async function getGameByPrivateCode(token: string, code: string) {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/games/code/${code.toUpperCase()}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: "Partie introuvable",
+      };
+    }
+
+    const data = await response.json();
+    return data; // Le backend retourne déjà { success, data } ou { success, error }
+  } catch (error) {
+    console.error("Get game by private code error:", error);
     return {
       success: false,
       error: "Une erreur est survenue",

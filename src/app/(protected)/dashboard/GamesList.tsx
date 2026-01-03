@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { io, Socket } from "socket.io-client";
+import { LuGamepad2, LuUsers, LuSwords, LuCircle } from "react-icons/lu";
 
 interface Player {
   id: number;
@@ -80,12 +81,14 @@ export default function GamesList({
 
   if (availableGames.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-6xl mb-4 animate-bounce">🎮</div>
-        <p className="text-slate-300 text-lg font-medium">
+      <div className="text-center py-16">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-zinc-800 border-2 border-zinc-700 rounded-xl mb-6">
+          <LuGamepad2 className="w-10 h-10 text-zinc-600" />
+        </div>
+        <p className="text-white text-lg font-bold mb-2">
           Aucune partie disponible pour le moment
         </p>
-        <p className="text-slate-500 text-sm mt-2">
+        <p className="text-zinc-500 text-sm">
           Créez la première partie et défiez vos amis !
         </p>
       </div>
@@ -101,78 +104,83 @@ export default function GamesList({
       {availableGames.map((game) => (
         <div
           key={game.id}
-          className="group bg-gradient-to-br from-slate-700/40 to-slate-800/40 hover:from-slate-700/60 hover:to-slate-800/60 
-                     border border-slate-600/50 hover:border-blue-500/50 rounded-xl p-6 
-                     transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10
-                     backdrop-blur-sm"
+          className="group bg-zinc-800 hover:bg-zinc-800/80 
+                     border border-zinc-700 hover:border-cyan-500/50 rounded-xl p-6 
+                     transition-all duration-300 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)]"
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex-1 w-full">
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative">
-                  <div className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-semibold border border-green-500/30">
+                  <div className="bg-green-950/50 text-green-400 px-3 py-1.5 rounded-lg text-xs font-bold border border-green-800 uppercase tracking-wide flex items-center gap-2">
+                    <LuCircle className="w-3 h-3 fill-current animate-pulse" />
                     En attente
                   </div>
-                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                 </div>
-                <span className="text-slate-400 text-xs font-mono">
+                <span className="text-zinc-500 text-xs font-mono font-semibold">
                   #{game.roomId.slice(-8)}
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-3">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-4">
+                <div className="flex items-center gap-3">
                   <div className="relative">
                     <div
-                      className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full 
-                                  flex items-center justify-center text-white font-bold text-sm shadow-lg"
+                      className="w-11 h-11 bg-cyan-500 rounded-lg 
+                                  flex items-center justify-center text-zinc-950 font-black text-base shadow-lg"
                     >
                       {game.player1.firstname[0]}
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-slate-800"></div>
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-cyan-400 rounded border-2 border-zinc-800"></div>
                   </div>
                   <div>
-                    <p className="text-white font-medium text-sm">
+                    <p className="text-white font-bold text-sm">
                       {game.player1.firstname} {game.player1.lastname}
                     </p>
-                    <p className="text-slate-400 text-xs">Créateur</p>
+                    <p className="text-zinc-500 text-xs font-medium uppercase tracking-wide">
+                      Créateur
+                    </p>
                   </div>
                 </div>
 
-                <div className="text-slate-500 font-bold text-lg">VS</div>
+                <div className="text-zinc-600 font-black text-xl">
+                  <LuSwords className="w-5 h-5" />
+                </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <div
-                    className="w-10 h-10 bg-slate-700/50 rounded-full border-2 border-dashed border-slate-500 
-                                  flex items-center justify-center text-slate-500"
+                    className="w-11 h-11 bg-zinc-900 rounded-lg border-2 border-dashed border-zinc-700 
+                                  flex items-center justify-center text-zinc-600"
                   >
-                    <span className="text-lg">?</span>
+                    <span className="text-xl font-bold">?</span>
                   </div>
                   <div>
-                    <p className="text-slate-400 font-medium text-sm">
+                    <p className="text-zinc-500 font-bold text-sm">
                       En attente...
                     </p>
-                    <p className="text-slate-500 text-xs">Adversaire</p>
+                    <p className="text-zinc-600 text-xs font-medium uppercase tracking-wide">
+                      Adversaire
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-4 text-xs">
-                <div className="flex items-center gap-2 text-slate-400">
-                  <span>👥</span>
-                  <span className="font-semibold text-white">1/2</span>
+                <div className="flex items-center gap-2 text-zinc-500">
+                  <LuUsers className="w-4 h-4" />
+                  <span className="font-bold text-white">1/2 joueurs</span>
                 </div>
               </div>
             </div>
 
             <button
               onClick={() => handleJoinGame(game.roomId)}
-              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 
-                         text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl shadow-blue-500/20
+              className="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-400
+                         text-zinc-950 font-black py-3 px-6 rounded-lg hover:shadow-[0_0_25px_rgba(6,182,212,0.3)]
                          transform hover:scale-105 transition-all duration-200
-                         flex items-center justify-center gap-2 group-hover:shadow-blue-500/30"
+                         flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
             >
-              <span className="text-lg">⚔️</span>
+              <LuSwords className="w-4 h-4" />
               <span>Rejoindre</span>
             </button>
           </div>

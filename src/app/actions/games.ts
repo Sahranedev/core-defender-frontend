@@ -1,7 +1,12 @@
 "use server";
 
 import { verifySession } from "@/app/lib/session";
-import { getAvailableGames, createGame, getGameByRoomId } from "@/app/lib/api";
+import {
+  getAvailableGames,
+  createGame,
+  getGameByRoomId,
+  getGameByPrivateCode,
+} from "@/app/lib/api";
 
 /**
  * Récupère toutes les parties disponibles
@@ -22,8 +27,9 @@ export async function fetchAvailableGames() {
 
 /**
  * Crée une nouvelle partie pour l'utilisateur connecté
+ * @param isPrivate - Si true, crée une partie privée avec un code
  */
-export async function createNewGame() {
+export async function createNewGame(isPrivate = false) {
   const session = await verifySession();
 
   if (!session) {
@@ -35,7 +41,24 @@ export async function createNewGame() {
 
   const userId = parseInt(session.userId);
 
-  return await createGame(session.jwt, userId);
+  return await createGame(session.jwt, userId, isPrivate);
+}
+
+/**
+ * Récupère une partie par son code privé
+ */
+export async function fetchGameByPrivateCode(code: string) {
+  const session = await verifySession();
+
+  if (!session) {
+    return {
+      success: false,
+      error: "Session expirée",
+      data: null,
+    };
+  }
+
+  return await getGameByPrivateCode(session.jwt, code);
 }
 
 /**
