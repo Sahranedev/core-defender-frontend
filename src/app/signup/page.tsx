@@ -51,7 +51,7 @@ export default function SignupPage() {
 
         {/* Bottom text */}
         <p className="text-center text-white/80 text-sm mt-6">
-          © 2025 King Builders. Tous droits réservés.
+          © 2025 Core Defender. Tous droits réservés.
         </p>
       </div>
     </div>

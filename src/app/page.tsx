@@ -25,7 +25,7 @@ export default function Home() {
           {/* Title */}
           <div className="space-y-4">
             <h1 className="text-5xl md:text-7xl font-bold text-white">
-              King Builders
+              Core Defender
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto">
               Bienvenue dans le jeu de stratégie en temps réel
@@ -138,7 +138,7 @@ export default function Home() {
 
           {/* Footer */}
           <p className="text-white/60 text-sm pt-8">
-            © 2025 King Builders. Tous droits réservés.
+            © 2025 Core Defender. Tous droits réservés.
           </p>
         </div>
       </div>

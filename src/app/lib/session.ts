@@ -5,8 +5,15 @@ import { SessionPayload } from "@/app/lib/definitions";
 import { cookies } from "next/headers";
 
 const secretKey = process.env.SESSION_SECRET;
+
+if (!secretKey && process.env.NODE_ENV === "production") {
+  throw new Error(
+    "SESSION_SECRET environment variable is required in production"
+  );
+}
+
 const encodedKey = new TextEncoder().encode(
-  secretKey || "default_secret_key_for_dev"
+  secretKey || "dev_secret_key_change_in_production"
 );
 
 // Déterminer si nous sommes en environnement de production ou de développement
@@ -16,7 +23,7 @@ export async function encrypt(payload: SessionPayload) {
   return new SignJWT(payload as any)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime("2h")
     .sign(encodedKey);
 }
 
@@ -36,7 +43,7 @@ export async function createSession(
   email: string,
   userId?: string
 ) {
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 jours
+  const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 heures (aligné avec la durée du JWT)
 
   // On stocke le token JWT dans un cookie sécurisé
   const cookieStore = await cookies();
@@ -71,7 +78,7 @@ export async function updateSession() {
     return null;
   }
 
-  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const expires = new Date(Date.now() + 2 * 60 * 60 * 1000);
 
   const cookieStore = await cookies();
   cookieStore.set("session", session, {

@@ -74,3 +74,38 @@ export async function createGame(token: string, player1Id: number) {
     };
   }
 }
+
+/**
+ * Récupère les détails d'une partie par son roomId
+ */
+export async function getGameByRoomId(token: string, roomId: string) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/games/room/${roomId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: "Partie introuvable",
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error("Get game by roomId error:", error);
+    return {
+      success: false,
+      error: "Une erreur est survenue",
+    };
+  }
+}

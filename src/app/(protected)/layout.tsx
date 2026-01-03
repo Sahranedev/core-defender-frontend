@@ -14,9 +14,9 @@ export default async function layout({
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <Header />
-      <main className="w-full h-screen">{children}</main>
-    </>
+      <main className="w-full">{children}</main>
+    </div>
   );
 }

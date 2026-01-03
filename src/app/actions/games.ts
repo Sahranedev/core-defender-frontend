@@ -1,7 +1,7 @@
 "use server";
 
 import { verifySession } from "@/app/lib/session";
-import { getAvailableGames, createGame } from "@/app/lib/api";
+import { getAvailableGames, createGame, getGameByRoomId } from "@/app/lib/api";
 
 /**
  * Récupère toutes les parties disponibles
@@ -26,8 +26,6 @@ export async function fetchAvailableGames() {
 export async function createNewGame() {
   const session = await verifySession();
 
-  console.log("Session dans createNewGame:", session);
-
   if (!session) {
     return {
       success: false,
@@ -35,10 +33,24 @@ export async function createNewGame() {
     };
   }
 
-  // On récupère l'ID utilisateur depuis la session
   const userId = parseInt(session.userId);
 
-  console.log("UserId:", userId, "JWT:", session.jwt ? "présent" : "absent");
-
   return await createGame(session.jwt, userId);
+}
+
+/**
+ * Récupère une partie par son roomId
+ */
+export async function fetchGameByRoomId(roomId: string) {
+  const session = await verifySession();
+
+  if (!session) {
+    return {
+      success: false,
+      error: "Session expirée",
+      data: null,
+    };
+  }
+
+  return await getGameByRoomId(session.jwt, roomId);
 }
