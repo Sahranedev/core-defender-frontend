@@ -43,33 +43,130 @@ interface GameState {
   status: string;
 }
 
-// Configuration du jeu
+// ============================================
+// SYSTÈME DE NOTIFICATIONS IN-GAME
+// ============================================
+type NotificationType = "error" | "warning" | "success" | "info";
+
+interface GameNotification {
+  id: string;
+  message: string;
+  type: NotificationType;
+  duration: number;
+}
+
+// ============================================
+// CONFIGURATION DU JEU
+// ============================================
 const BOARD_WIDTH = 1100;
 const BOARD_HEIGHT = 650;
-const ZONE_PLAYER1_END = 480; // Zone joueur 1 (gauche) : 0 - 480
-const ZONE_PLAYER2_START = 620; // Zone joueur 2 (droite) : 620 - 1100
-// Zone neutre au milieu : 480 - 620
+const ZONE_PLAYER1_END = 480;
+const ZONE_PLAYER2_START = 620;
 
-// Stats des défenses (pour les barres de vie)
+// Stats des défenses (synchronisé avec le backend)
 const DEFENSE_MAX_HP: Record<string, number> = {
-  WALL: 500,
-  TURRET: 200,
+  WALL: 400,
+  TURRET: 150,
   TRAP: 100,
   HEAL_BLOCK: 200,
 };
 
 const DEFENSE_COSTS: Record<string, number> = {
-  WALL: 100,
-  TURRET: 350,
-  TRAP: 150,
-  HEAL_BLOCK: 250,
+  WALL: 150,
+  TURRET: 400,
+  TRAP: 200,
+  HEAL_BLOCK: 300,
+};
+
+const DEFENSE_LIMITS: Record<string, number> = {
+  WALL: 10,
+  TURRET: 6,
+  TRAP: 4,
+  HEAL_BLOCK: 3,
 };
 
 const PROJECTILE_COSTS: Record<string, number> = {
-  BASIC: 50,
-  FAST: 75,
-  HEAVY: 150,
+  BASIC: 75,
+  FAST: 100,
+  HEAVY: 200,
 };
+
+// HP du core pour le calcul des barres de vie
+const CORE_MAX_HP = 2500;
+
+// ============================================
+// CONFIGURATION DES SPRITES (Mix Top-Down + Isométrique)
+// ============================================
+const SPRITE_PATHS = {
+  // Cores isométriques (avec relief)
+  coreTower: "/game/core-tower.png",
+  coreEnemy: "/game/core-enemy.png",
+  // Défenses top-down
+  turret: "/game/turret.png",
+  turretEnemy: "/game/turret-enemy.png",
+  wall: "/game/wall.png",
+  trap: "/game/trap.png",
+  healBlock: "/game/heal-block.png",
+  // Projectiles
+  projectileBasic: "/game/projectile.png",
+  projectileFast: "/game/projectile-fast.png",
+  projectileHeavy: "/game/projectile-heavy.png",
+} as const;
+
+// Mapping type de défense → clé sprite (pour mes défenses)
+const DEFENSE_SPRITE_MAP: Record<string, keyof typeof SPRITE_PATHS> = {
+  WALL: "wall",
+  TURRET: "turret",
+  TRAP: "trap",
+  HEAL_BLOCK: "healBlock",
+};
+
+// Mapping type de défense → clé sprite (pour les défenses ennemies)
+const DEFENSE_SPRITE_MAP_ENEMY: Record<string, keyof typeof SPRITE_PATHS> = {
+  WALL: "wall",
+  TURRET: "turretEnemy",
+  TRAP: "trap",
+  HEAL_BLOCK: "healBlock",
+};
+
+// Mapping type de projectile → clé sprite
+const PROJECTILE_SPRITE_MAP: Record<string, keyof typeof SPRITE_PATHS> = {
+  BASIC: "projectileBasic",
+  FAST: "projectileFast",
+  HEAVY: "projectileHeavy",
+};
+
+type GameImages = Record<keyof typeof SPRITE_PATHS, HTMLImageElement>;
+
+// ============================================
+// FONCTION DE PRÉCHARGEMENT DES IMAGES
+// ============================================
+function preloadImages(): Promise<GameImages> {
+  return new Promise((resolve, reject) => {
+    const images = {} as GameImages;
+    const entries = Object.entries(SPRITE_PATHS);
+    let loadedCount = 0;
+
+    entries.forEach(([key, path]) => {
+      const img = new Image();
+      img.src = path;
+
+      img.onload = () => {
+        images[key as keyof typeof SPRITE_PATHS] = img;
+        loadedCount++;
+
+        if (loadedCount === entries.length) {
+          resolve(images);
+        }
+      };
+
+      img.onerror = () => {
+        console.error(`Erreur de chargement: ${path}`);
+        reject(new Error(`Failed to load image: ${path}`));
+      };
+    });
+  });
+}
 
 export default function GameCanvas({
   roomId,
@@ -80,6 +177,10 @@ export default function GameCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const socketRef = useRef<Socket | null>(null);
 
+  // État des images préchargées
+  const [gameImages, setGameImages] = useState<GameImages | null>(null);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [isWaitingForPlayer, setIsWaitingForPlayer] = useState(true);
   const [gameStarted, setGameStarted] = useState(false);
@@ -88,6 +189,46 @@ export default function GameCanvas({
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(
     null
   );
+
+  // Système de notifications in-game
+  const [notifications, setNotifications] = useState<GameNotification[]>([]);
+
+  // Système de décompte au démarrage
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [countdownText, setCountdownText] = useState<string | null>(null);
+
+  // Fonction pour afficher une notification
+  const showNotification = useCallback(
+    (message: string, type: NotificationType = "info", duration = 3000) => {
+      const id = `notif-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const notification: GameNotification = { id, message, type, duration };
+
+      setNotifications((prev) => [...prev, notification]);
+
+      // Supprime automatiquement après la durée
+      setTimeout(() => {
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
+      }, duration);
+    },
+    []
+  );
+
+  // ============================================
+  // PRÉCHARGEMENT DES IMAGES AU MONTAGE
+  // ============================================
+  useEffect(() => {
+    preloadImages()
+      .then((images) => {
+        setGameImages(images);
+        setImagesLoaded(true);
+        console.log("✅ Sprites chargés avec succès");
+      })
+      .catch((error) => {
+        console.error("❌ Erreur chargement sprites:", error);
+        // On continue quand même, le jeu fonctionnera avec des fallbacks
+        setImagesLoaded(true);
+      });
+  }, []);
 
   // Vue miroir : le joueur 2 (non-créateur) voit le terrain inversé
   // Ainsi, chaque joueur voit toujours SA zone à gauche
@@ -148,7 +289,26 @@ export default function GameCanvas({
     socket.on("game:start", (data) => {
       console.log("🎮 La partie commence!", data);
       setIsWaitingForPlayer(false);
-      setGameStarted(true);
+
+      // Lance le décompte avant le début de la partie
+      setCountdown(5);
+      setCountdownText(null);
+
+      const countdownInterval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev === null || prev <= 1) {
+            clearInterval(countdownInterval);
+            setCountdownText("C'EST PARTI !");
+            setTimeout(() => {
+              setCountdown(null);
+              setCountdownText(null);
+              setGameStarted(true);
+            }, 1200);
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     });
 
     // Événement : Mise à jour de l'état du jeu (60 fois par seconde)
@@ -159,8 +319,15 @@ export default function GameCanvas({
     // Événement : Fin de partie
     socket.on("game:end", (data) => {
       console.log("🏆 Partie terminée!", data);
-      alert(`Partie terminée ! Gagnant : Player ${data.winnerId}`);
-      setTimeout(() => router.push("/dashboard"), 2000);
+      const isWinner = data.winnerId === userId;
+      showNotification(
+        isWinner
+          ? "🏆 Victoire ! Vous avez gagné !"
+          : "💀 Défaite... Votre core a été détruit",
+        isWinner ? "success" : "error",
+        5000
+      );
+      setTimeout(() => router.push("/dashboard"), 3000);
     });
 
     // Événement : Un joueur s'est déconnecté
@@ -168,7 +335,11 @@ export default function GameCanvas({
       "game:playerDisconnected",
       (data: { userId: number; message: string }) => {
         console.log("⚠️ Joueur déconnecté:", data);
-        alert(data.message);
+        showNotification(
+          "⚠️ Adversaire déconnecté - Reconnexion en cours...",
+          "warning",
+          5000
+        );
       }
     );
 
@@ -177,7 +348,7 @@ export default function GameCanvas({
       "game:playerReconnected",
       (data: { userId: number; message: string }) => {
         console.log("✅ Joueur reconnecté:", data);
-        alert(data.message);
+        showNotification("✅ Adversaire reconnecté !", "success", 3000);
       }
     );
 
@@ -187,24 +358,26 @@ export default function GameCanvas({
       (data: { reason: string; winnerId: number; loserId: number }) => {
         console.log("❌ Partie abandonnée:", data);
 
-        const message =
-          data.winnerId === userId
-            ? `Victoire ! L'adversaire a abandonné la partie.`
-            : `Défaite. Vous avez été déconnecté trop longtemps.`;
+        const isWinner = data.winnerId === userId;
+        showNotification(
+          isWinner
+            ? "🏆 Victoire ! L'adversaire a abandonné"
+            : "💀 Défaite - Déconnexion trop longue",
+          isWinner ? "success" : "error",
+          5000
+        );
 
-        alert(message);
-
-        // Redirection vers le dashboard après 2 secondes
         setTimeout(() => {
           router.push("/dashboard");
-        }, 2000);
+        }, 3000);
       }
     );
 
     // Événement : Erreur
     socket.on("game:error", (error) => {
       console.error("❌ Erreur:", error);
-      alert(error.message);
+      showNotification(`❌ ${error.message}`, "error", 4000);
+
       // Redirige vers le dashboard en cas d'erreur critique
       if (
         error.message.includes("n'est plus connecté") ||
@@ -212,7 +385,7 @@ export default function GameCanvas({
         error.message.includes("déjà commencé") ||
         error.message.includes("terminée")
       ) {
-        setTimeout(() => router.push("/dashboard"), 1500);
+        setTimeout(() => router.push("/dashboard"), 2000);
       }
     });
 
@@ -220,10 +393,10 @@ export default function GameCanvas({
     return () => {
       socket.disconnect();
     };
-  }, [roomId, userId, isCreator, router]);
+  }, [roomId, userId, isCreator, router, showNotification]);
 
   // ============================================
-  // PARTIE 2 : RENDU CANVAS (60 FPS)
+  // PARTIE 2 : RENDU CANVAS (60 FPS) AVEC SPRITES
   // ============================================
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -235,17 +408,15 @@ export default function GameCanvas({
     const render = () => {
       // ========== FOND ==========
       const bgGradient = ctx.createLinearGradient(0, 0, BOARD_WIDTH, 0);
-      bgGradient.addColorStop(0, "#0f172a");
-      bgGradient.addColorStop(0.5, "#1e293b");
-      bgGradient.addColorStop(1, "#0f172a");
+      bgGradient.addColorStop(0, "#1a1a2e");
+      bgGradient.addColorStop(0.5, "#16213e");
+      bgGradient.addColorStop(1, "#1a1a2e");
       ctx.fillStyle = bgGradient;
       ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
 
-      // ========== ZONES DE PLACEMENT (en vue miroir, tout est inversé visuellement) ==========
-      // Ma zone est TOUJOURS à gauche (bleue), zone adverse à droite (rouge)
-
+      // ========== ZONES DE PLACEMENT ==========
       // Ma zone (gauche - bleue)
-      ctx.fillStyle = "rgba(59, 130, 246, 0.15)";
+      ctx.fillStyle = "rgba(59, 130, 246, 0.12)";
       ctx.fillRect(0, 0, ZONE_PLAYER1_END, BOARD_HEIGHT);
 
       // Zone adverse (droite - rouge)
@@ -257,8 +428,8 @@ export default function GameCanvas({
         BOARD_HEIGHT
       );
 
-      // Zone neutre (milieu - sombre)
-      ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+      // Zone neutre (milieu)
+      ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
       ctx.fillRect(
         ZONE_PLAYER1_END,
         0,
@@ -267,7 +438,7 @@ export default function GameCanvas({
       );
 
       // Lignes de séparation
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
       ctx.lineWidth = 2;
       ctx.setLineDash([10, 10]);
       ctx.beginPath();
@@ -281,80 +452,111 @@ export default function GameCanvas({
       ctx.setLineDash([]);
 
       // ========== GRILLE SUBTILE ==========
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.02)";
       ctx.lineWidth = 1;
-      for (let gx = 0; gx < BOARD_WIDTH; gx += 40) {
+      for (let gx = 0; gx < BOARD_WIDTH; gx += 50) {
         ctx.beginPath();
         ctx.moveTo(gx, 0);
         ctx.lineTo(gx, BOARD_HEIGHT);
         ctx.stroke();
       }
-      for (let gy = 0; gy < BOARD_HEIGHT; gy += 40) {
+      for (let gy = 0; gy < BOARD_HEIGHT; gy += 50) {
         ctx.beginPath();
         ctx.moveTo(0, gy);
         ctx.lineTo(BOARD_WIDTH, gy);
         ctx.stroke();
       }
 
-      // ========== CORES (avec transformation miroir) ==========
+      // ========== CORES (avec sprites isométriques) ==========
       gameState.players.forEach((player) => {
         const isMe = player.id === userId;
-        // Appliquer la transformation miroir sur X
         const x = toDisplayX(player.corePosition.x);
         const y = player.corePosition.y;
-        const size = 60;
+        const coreWidth = 90;
+        const coreHeight = 100; // Plus haut car isométrique
 
         // Aura/glow autour du core
-        const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+        const glowGradient = ctx.createRadialGradient(
+          x,
+          y + 10,
+          0,
+          x,
+          y + 10,
+          70
+        );
         glowGradient.addColorStop(
           0,
-          isMe ? "rgba(59, 130, 246, 0.4)" : "rgba(239, 68, 68, 0.4)"
+          isMe ? "rgba(59, 130, 246, 0.6)" : "rgba(239, 68, 68, 0.6)"
         );
         glowGradient.addColorStop(1, "transparent");
         ctx.fillStyle = glowGradient;
-        ctx.fillRect(x - size, y - size, size * 2, size * 2);
+        ctx.beginPath();
+        ctx.arc(x, y + 10, 70, 0, Math.PI * 2);
+        ctx.fill();
 
-        // Core principal
-        const coreGradient = ctx.createLinearGradient(
-          x - 30,
-          y - 30,
-          x + 30,
-          y + 30
+        // Ombre sous le core
+        ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+        ctx.beginPath();
+        ctx.ellipse(
+          x,
+          y + coreHeight / 2 - 5,
+          coreWidth / 2.5,
+          15,
+          0,
+          0,
+          Math.PI * 2
         );
-        if (isMe) {
-          coreGradient.addColorStop(0, "#3b82f6");
-          coreGradient.addColorStop(1, "#1d4ed8");
+        ctx.fill();
+
+        // Sprite du core isométrique
+        const coreSprite = isMe ? gameImages?.coreTower : gameImages?.coreEnemy;
+        if (coreSprite) {
+          ctx.drawImage(
+            coreSprite,
+            x - coreWidth / 2,
+            y - coreHeight / 2,
+            coreWidth,
+            coreHeight
+          );
         } else {
-          coreGradient.addColorStop(0, "#ef4444");
-          coreGradient.addColorStop(1, "#b91c1c");
+          // Fallback : carré coloré
+          ctx.fillStyle = isMe ? "#3b82f6" : "#ef4444";
+          ctx.fillRect(x - 35, y - 35, 70, 70);
         }
-        ctx.fillStyle = coreGradient;
-        ctx.fillRect(x - 30, y - 30, 60, 60);
 
-        // Bordure du core
+        // Bordure lumineuse autour (effet glow)
+        ctx.shadowColor = isMe ? "#3b82f6" : "#ef4444";
+        ctx.shadowBlur = 15;
         ctx.strokeStyle = isMe ? "#60a5fa" : "#f87171";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(x - 30, y - 30, 60, 60);
-
-        // Icône au centre
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "24px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("⚡", x, y);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(x, y + 15, coreWidth / 2.2, 25, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
 
         // Barre de HP sous le core
-        const hpPercent = player.coreHP / 1000;
-        const hpBarWidth = 70;
-        const hpBarHeight = 8;
+        const hpPercent = player.coreHP / CORE_MAX_HP;
+        const hpBarWidth = 80;
+        const hpBarHeight = 10;
         const hpBarX = x - hpBarWidth / 2;
-        const hpBarY = y + 40;
+        const hpBarY = y + coreHeight / 2 + 5;
 
         // Fond de la barre
-        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-        ctx.fillRect(hpBarX - 2, hpBarY - 2, hpBarWidth + 4, hpBarHeight + 4);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        ctx.beginPath();
+        ctx.roundRect(
+          hpBarX - 2,
+          hpBarY - 2,
+          hpBarWidth + 4,
+          hpBarHeight + 4,
+          4
+        );
+        ctx.fill();
+
         ctx.fillStyle = "#1e293b";
-        ctx.fillRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
+        ctx.beginPath();
+        ctx.roundRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight, 3);
+        ctx.fill();
 
         // Barre de vie
         const hpColor =
@@ -364,7 +566,9 @@ export default function GameCanvas({
             ? "#f59e0b"
             : "#ef4444";
         ctx.fillStyle = hpColor;
-        ctx.fillRect(hpBarX, hpBarY, hpBarWidth * hpPercent, hpBarHeight);
+        ctx.beginPath();
+        ctx.roundRect(hpBarX, hpBarY, hpBarWidth * hpPercent, hpBarHeight, 3);
+        ctx.fill();
 
         // Texte HP
         ctx.fillStyle = "#ffffff";
@@ -374,84 +578,133 @@ export default function GameCanvas({
         ctx.fillText(`${player.coreHP} HP`, x, hpBarY + hpBarHeight + 4);
       });
 
-      // ========== DÉFENSES (avec transformation miroir) ==========
-      gameState.defenses.forEach((defense) => {
-        const isMyDefense = defense.playerId === userId;
-        // Appliquer la transformation miroir sur X
-        const x = toDisplayX(defense.x);
-        const y = defense.y;
-        const size = 36;
+      // ========== DÉFENSES (avec sprites et rotation dynamique) ==========
 
-        // Couleurs selon le type
-        let primaryColor: string;
-        let secondaryColor: string;
-        let icon: string;
+      // Fonction pour calculer l'angle vers la cible d'une tourelle
+      const calculateTurretAngle = (
+        turretX: number,
+        turretY: number,
+        turretPlayerId: number
+      ): number => {
+        let targetX: number | null = null;
+        let targetY: number | null = null;
+        let minDistance = Infinity;
+        const TURRET_RANGE = 950; // Même portée que le backend
 
-        switch (defense.type) {
-          case "WALL":
-            primaryColor = "#475569";
-            secondaryColor = "#64748b";
-            icon = "🧱";
-            break;
-          case "TURRET":
-            primaryColor = "#dc2626";
-            secondaryColor = "#ef4444";
-            icon = "🔫";
-            break;
-          case "TRAP":
-            primaryColor = "#7c3aed";
-            secondaryColor = "#a855f7";
-            icon = "⚡";
-            break;
-          case "HEAL_BLOCK":
-            primaryColor = "#16a34a";
-            secondaryColor = "#22c55e";
-            icon = "💚";
-            break;
-          default:
-            primaryColor = "#6b7280";
-            secondaryColor = "#9ca3af";
-            icon = "?";
+        // Priorité 1 : Chercher les tourelles ennemies à portée
+        for (const otherDefense of gameState.defenses) {
+          if (otherDefense.type !== "TURRET") continue;
+          if (otherDefense.playerId === turretPlayerId) continue;
+
+          const enemyX = toDisplayX(otherDefense.x);
+          const enemyY = otherDefense.y;
+          const dx = enemyX - turretX;
+          const dy = enemyY - turretY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance <= TURRET_RANGE && distance < minDistance) {
+            minDistance = distance;
+            targetX = enemyX;
+            targetY = enemyY;
+          }
         }
 
-        // Ombre
-        ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
-        ctx.fillRect(x - size / 2 + 3, y - size / 2 + 3, size, size);
+        // Priorité 2 : Si pas de tourelle ennemie, cibler le core ennemi
+        if (targetX === null) {
+          for (const player of gameState.players) {
+            if (player.id === turretPlayerId) continue;
 
-        // Défense principale
-        const defGradient = ctx.createLinearGradient(
-          x - size / 2,
-          y - size / 2,
-          x + size / 2,
-          y + size / 2
-        );
-        defGradient.addColorStop(0, secondaryColor);
-        defGradient.addColorStop(1, primaryColor);
-        ctx.fillStyle = defGradient;
-        ctx.fillRect(x - size / 2, y - size / 2, size, size);
+            const coreX = toDisplayX(player.corePosition.x);
+            const coreY = player.corePosition.y;
+            const dx = coreX - turretX;
+            const dy = coreY - turretY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // Bordure (couleur selon propriétaire)
-        ctx.strokeStyle = isMyDefense ? "#60a5fa" : "#f87171";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x - size / 2, y - size / 2, size, size);
+            if (distance <= TURRET_RANGE && distance < minDistance) {
+              targetX = coreX;
+              targetY = coreY;
+            }
+          }
+        }
 
-        // Icône
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "16px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(icon, x, y);
+        // Calculer l'angle vers la cible
+        if (targetX !== null && targetY !== null) {
+          const dx = targetX - turretX;
+          const dy = targetY - turretY;
+          // Le sprite pointe vers le haut, donc on ajoute 90° (π/2)
+          return Math.atan2(dy, dx) + Math.PI / 2;
+        }
 
-        // Barre de vie
+        // Par défaut : pointer vers l'ennemi (droite pour moi, gauche pour l'ennemi)
+        return turretPlayerId === userId ? Math.PI / 2 : -Math.PI / 2;
+      };
+
+      gameState.defenses.forEach((defense) => {
+        const isMyDefense = defense.playerId === userId;
+        const x = toDisplayX(defense.x);
+        const y = defense.y;
+        const size = 45;
+
+        // Ombre portée
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.beginPath();
+        ctx.ellipse(x, y + size / 2, size / 2, size / 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sprite de la défense (différent selon propriétaire pour les tourelles)
+        const spriteMap = isMyDefense
+          ? DEFENSE_SPRITE_MAP
+          : DEFENSE_SPRITE_MAP_ENEMY;
+        const spriteKey = spriteMap[defense.type];
+        const sprite = spriteKey && gameImages?.[spriteKey];
+
+        if (sprite) {
+          // Rotation dynamique pour les tourelles vers leur cible
+          if (defense.type === "TURRET") {
+            ctx.save();
+            ctx.translate(x, y);
+            const angle = calculateTurretAngle(x, y, defense.playerId);
+            ctx.rotate(angle);
+            ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
+            ctx.restore();
+          } else {
+            ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size);
+          }
+        } else {
+          // Fallback : forme colorée selon le type
+          let color: string;
+          switch (defense.type) {
+            case "WALL":
+              color = "#64748b";
+              break;
+            case "TURRET":
+              color = "#ef4444";
+              break;
+            case "TRAP":
+              color = "#a855f7";
+              break;
+            case "HEAL_BLOCK":
+              color = "#22c55e";
+              break;
+            default:
+              color = "#9ca3af";
+          }
+          ctx.fillStyle = color;
+          ctx.fillRect(x - size / 2, y - size / 2, size, size);
+        }
+
+        // Barre de vie au-dessus
         const maxHP = DEFENSE_MAX_HP[defense.type] || 200;
         const hpPercent = defense.hp / maxHP;
         const hpBarWidth = size;
-        const hpBarHeight = 4;
+        const hpBarHeight = 5;
         const hpBarX = x - size / 2;
-        const hpBarY = y - size / 2 - 8;
+        const hpBarY = y - size / 2 - 10;
 
-        ctx.fillStyle = "#1e293b";
-        ctx.fillRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.beginPath();
+        ctx.roundRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight, 2);
+        ctx.fill();
 
         const hpColor =
           hpPercent > 0.5
@@ -460,87 +713,148 @@ export default function GameCanvas({
             ? "#f59e0b"
             : "#ef4444";
         ctx.fillStyle = hpColor;
-        ctx.fillRect(hpBarX, hpBarY, hpBarWidth * hpPercent, hpBarHeight);
+        ctx.beginPath();
+        ctx.roundRect(hpBarX, hpBarY, hpBarWidth * hpPercent, hpBarHeight, 2);
+        ctx.fill();
       });
 
-      // ========== PROJECTILES (avec transformation miroir) ==========
+      // ========== PROJECTILES (avec sprites) ==========
       gameState.projectiles.forEach((projectile) => {
-        // Appliquer la transformation miroir sur X
         const x = toDisplayX(projectile.x);
         const y = projectile.y;
         const targetX = toDisplayX(projectile.targetX);
 
-        // Traînée (avec protection contre division par zéro)
-        const trailLength = 20;
+        // Traînée
+        const trailLength = 25;
         const dx = targetX - x;
         const dy = projectile.targetY - y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Éviter la division par zéro si le projectile est à sa cible
         if (dist > 0.1) {
           const trailX = x - (dx / dist) * trailLength;
           const trailY = y - (dy / dist) * trailLength;
 
           const trailGradient = ctx.createLinearGradient(trailX, trailY, x, y);
           trailGradient.addColorStop(0, "transparent");
-          trailGradient.addColorStop(1, "#fbbf24");
+          trailGradient.addColorStop(1, "rgba(251, 191, 36, 0.8)");
           ctx.strokeStyle = trailGradient;
-          ctx.lineWidth = 4;
+          ctx.lineWidth = 3;
           ctx.beginPath();
           ctx.moveTo(trailX, trailY);
           ctx.lineTo(x, y);
           ctx.stroke();
         }
 
-        // Projectile (glow)
-        const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, 12);
-        glowGradient.addColorStop(0, "#fbbf24");
-        glowGradient.addColorStop(0.5, "rgba(251, 191, 36, 0.5)");
+        // Glow autour du projectile
+        const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, 15);
+        glowGradient.addColorStop(0, "rgba(251, 191, 36, 0.6)");
         glowGradient.addColorStop(1, "transparent");
         ctx.fillStyle = glowGradient;
         ctx.beginPath();
-        ctx.arc(x, y, 12, 0, Math.PI * 2);
+        ctx.arc(x, y, 15, 0, Math.PI * 2);
         ctx.fill();
 
-        // Projectile (centre)
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fill();
+        // Sprite du projectile avec rotation vers la cible
+        const spriteKey = PROJECTILE_SPRITE_MAP[projectile.type];
+        const sprite = spriteKey && gameImages?.[spriteKey];
+        const projSize =
+          projectile.type === "HEAVY"
+            ? 28
+            : projectile.type === "FAST"
+            ? 18
+            : 22;
+
+        if (sprite && dist > 0.1) {
+          ctx.save();
+          ctx.translate(x, y);
+          // Calculer l'angle vers la cible (les sprites pointent vers le haut, donc +90°)
+          const angle = Math.atan2(dy, dx) + Math.PI / 2;
+          ctx.rotate(angle);
+          ctx.drawImage(
+            sprite,
+            -projSize / 2,
+            -projSize / 2,
+            projSize,
+            projSize
+          );
+          ctx.restore();
+        } else if (sprite) {
+          ctx.drawImage(
+            sprite,
+            x - projSize / 2,
+            y - projSize / 2,
+            projSize,
+            projSize
+          );
+        } else {
+          // Fallback : cercle
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(x, y, projSize / 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
       });
 
       // ========== PREVIEW DE PLACEMENT ==========
       if (mousePos && gameStarted) {
         const canPlace = isInMyZone(mousePos.x);
+        const previewSize = 45;
+
+        // Sprite preview (semi-transparent)
+        const spriteKey = DEFENSE_SPRITE_MAP[selectedDefense];
+        const sprite = spriteKey && gameImages?.[spriteKey];
+
+        ctx.globalAlpha = canPlace ? 0.7 : 0.3;
+
+        if (sprite) {
+          ctx.drawImage(
+            sprite,
+            mousePos.x - previewSize / 2,
+            mousePos.y - previewSize / 2,
+            previewSize,
+            previewSize
+          );
+        }
+
+        ctx.globalAlpha = 1;
+
+        // Bordure de preview
         ctx.strokeStyle = canPlace
-          ? "rgba(34, 197, 94, 0.8)"
-          : "rgba(239, 68, 68, 0.8)";
+          ? "rgba(34, 197, 94, 0.9)"
+          : "rgba(239, 68, 68, 0.9)";
         ctx.lineWidth = 2;
         ctx.setLineDash([5, 5]);
-        ctx.strokeRect(mousePos.x - 18, mousePos.y - 18, 36, 36);
+        ctx.strokeRect(
+          mousePos.x - previewSize / 2,
+          mousePos.y - previewSize / 2,
+          previewSize,
+          previewSize
+        );
         ctx.setLineDash([]);
 
         if (!canPlace) {
           ctx.fillStyle = "rgba(239, 68, 68, 0.2)";
-          ctx.fillRect(mousePos.x - 18, mousePos.y - 18, 36, 36);
+          ctx.fillRect(
+            mousePos.x - previewSize / 2,
+            mousePos.y - previewSize / 2,
+            previewSize,
+            previewSize
+          );
         }
       }
 
       // ========== LABELS DES ZONES ==========
-      // En vue miroir, les labels sont inversés visuellement mais logiquement corrects :
-      // - Ma zone est TOUJOURS affichée à gauche
-      // - Zone adverse TOUJOURS à droite
-      ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-      ctx.font = "12px sans-serif";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+      ctx.font = "bold 11px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      ctx.fillText("VOTRE ZONE", ZONE_PLAYER1_END / 2, 10);
+      ctx.fillText("VOTRE ZONE", ZONE_PLAYER1_END / 2, 12);
       ctx.fillText(
         "ZONE NEUTRE",
         (ZONE_PLAYER1_END + ZONE_PLAYER2_START) / 2,
-        10
+        12
       );
-      ctx.fillText("ZONE ADVERSE", (ZONE_PLAYER2_START + BOARD_WIDTH) / 2, 10);
+      ctx.fillText("ZONE ADVERSE", (ZONE_PLAYER2_START + BOARD_WIDTH) / 2, 12);
     };
 
     let animationId: number;
@@ -553,7 +867,16 @@ export default function GameCanvas({
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [gameState, userId, mousePos, gameStarted, isInMyZone, toDisplayX]);
+  }, [
+    gameState,
+    userId,
+    mousePos,
+    gameStarted,
+    isInMyZone,
+    toDisplayX,
+    gameImages,
+    selectedDefense,
+  ]);
 
   // ============================================
   // PARTIE 3 : INTERACTIONS UTILISATEUR
@@ -632,10 +955,27 @@ export default function GameCanvas({
   // PARTIE 4 : INTERFACE UTILISATEUR
   // ============================================
 
+  // État : Chargement des assets
+  if (!imagesLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-900">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🎮</div>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Chargement des assets...
+          </h2>
+          <div className="mt-4">
+            <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // État : En attente d'un adversaire
   if (isWaitingForPlayer) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-slate-900">
         <div className="text-center">
           <div className="text-6xl mb-4">⏳</div>
           <h2 className="text-2xl font-bold text-white mb-2">
@@ -656,7 +996,67 @@ export default function GameCanvas({
   const myPlayer = gameState?.players.find((p) => p.id === userId);
 
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-4 lg:p-6 relative">
+      {/* ========== NOTIFICATIONS IN-GAME ========== */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none">
+        {notifications.map((notif) => (
+          <div
+            key={notif.id}
+            className={`
+              notification-enter
+              px-6 py-3 rounded-xl shadow-2xl backdrop-blur-md
+              font-semibold text-white text-center min-w-[320px]
+              border-2
+              ${
+                notif.type === "error"
+                  ? "bg-red-600/95 border-red-400 text-red-50"
+                  : ""
+              }
+              ${
+                notif.type === "warning"
+                  ? "bg-amber-500/95 border-amber-300 text-amber-50"
+                  : ""
+              }
+              ${
+                notif.type === "success"
+                  ? "bg-emerald-600/95 border-emerald-400 text-emerald-50"
+                  : ""
+              }
+              ${
+                notif.type === "info"
+                  ? "bg-blue-600/95 border-blue-400 text-blue-50"
+                  : ""
+              }
+            `}
+          >
+            {notif.message}
+          </div>
+        ))}
+      </div>
+
+      {/* ========== OVERLAY DÉCOMPTE ========== */}
+      {(countdown !== null || countdownText !== null) && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+          <div className="countdown-container text-center">
+            {countdown !== null && (
+              <div className="countdown-number" key={countdown}>
+                <span className="text-[180px] font-black text-transparent bg-clip-text bg-gradient-to-b from-cyan-400 via-blue-500 to-purple-600 drop-shadow-2xl">
+                  {countdown}
+                </span>
+                <div className="countdown-ring"></div>
+              </div>
+            )}
+            {countdownText !== null && (
+              <div className="countdown-text">
+                <span className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500">
+                  {countdownText}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="max-w-[1500px] mx-auto">
         {/* Header compact */}
         <div className="mb-4 flex items-center justify-between">
@@ -710,27 +1110,44 @@ export default function GameCanvas({
               </h3>
               <div className="space-y-2">
                 {[
-                  { type: "WALL", icon: "🧱", name: "Mur", hp: 500 },
-                  { type: "TURRET", icon: "🔫", name: "Tourelle", hp: 200 },
+                  { type: "WALL", icon: "🧱", name: "Mur" },
+                  { type: "TURRET", icon: "🔫", name: "Tourelle" },
                 ].map((defense) => {
                   const cost = DEFENSE_COSTS[defense.type];
+                  const limit = DEFENSE_LIMITS[defense.type];
+                  const placed =
+                    gameState?.defenses.filter(
+                      (d) => d.type === defense.type && d.playerId === userId
+                    ).length ?? 0;
                   const canAfford = (myPlayer?.resources || 0) >= cost;
+                  const hasRoom = placed < limit;
+                  const canPlace = canAfford && hasRoom;
+
                   return (
                     <button
                       key={defense.type}
                       onClick={() => setSelectedDefense(defense.type)}
-                      disabled={!canAfford}
+                      disabled={!canPlace}
                       className={`w-full px-3 py-2 rounded-lg font-medium transition-all flex items-center justify-between ${
                         selectedDefense === defense.type
                           ? "bg-blue-600 text-white ring-2 ring-blue-400"
-                          : canAfford
+                          : canPlace
                           ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
                           : "bg-slate-800 text-slate-500 cursor-not-allowed"
                       }`}
                     >
-                      <span className="flex items-center gap-2">
-                        <span>{defense.icon}</span>
-                        <span>{defense.name}</span>
+                      <span className="flex flex-col items-start">
+                        <span className="flex items-center gap-2">
+                          <span>{defense.icon}</span>
+                          <span>{defense.name}</span>
+                        </span>
+                        <span
+                          className={`text-xs ${
+                            hasRoom ? "text-slate-400" : "text-red-400"
+                          }`}
+                        >
+                          {placed}/{limit} placés
+                        </span>
                       </span>
                       <span
                         className={`text-sm ${
