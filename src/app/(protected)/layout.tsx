@@ -7,11 +7,11 @@ export default async function layout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await verifySession();
+  // const session = await verifySession();
 
-  if (!session) {
+  /*  if (!session) {
     redirect("/login");
-  }
+  } */
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">

@@ -13,7 +13,11 @@ export async function getUsers() {
     });
 
     if (!response.ok) {
-      return { success: false, error: "Erreur lors de la récupération des utilisateurs", data: [] };
+      return {
+        success: false,
+        error: "Erreur lors de la récupération des utilisateurs",
+        data: [],
+      };
     }
 
     const data = await response.json();
@@ -35,7 +39,10 @@ export async function createUser(user: User) {
     });
 
     if (!response.ok) {
-      return { success: false, error: "Erreur lors de la création de l'utilisateur" };
+      return {
+        success: false,
+        error: "Erreur lors de la création de l'utilisateur",
+      };
     }
 
     const data = await response.json();
@@ -160,40 +167,17 @@ export async function signup(
     }
 
     const data = await response.json();
-
-    // Connexion automatique après inscription
-    if (data.newUser) {
-      const loginResponse = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-        }/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email, password }),
-          cache: "no-store",
-        }
-      );
-
-      if (loginResponse.ok) {
-        const loginData = await loginResponse.json();
-        if (loginData.token) {
-          await createSession(
-            loginData.token,
-            email,
-            loginData.userId?.toString()
-          );
-        }
-      }
-    }
   } catch (error) {
     console.error("Signup error:", error);
     return {
       message: "Une erreur est survenue lors de l'inscription",
     };
   }
-
-  redirect("/dashboard");
+}
+export async function callCreateSession(
+  token: string,
+  email: string,
+  userId: string
+) {
+  await createSession(token, email, userId);
 }
