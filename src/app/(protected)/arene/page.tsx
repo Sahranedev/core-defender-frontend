@@ -5,7 +5,7 @@ import JoinPrivateGame from "./JoinPrivateGame";
 import GamesList from "./GamesList";
 import { LuSwords, LuCircleDot } from "react-icons/lu";
 
-export default async function DashboardPage() {
+export default async function ArenePage() {
   const [result, session] = await Promise.all([
     fetchAvailableGames(),
     verifySession(),

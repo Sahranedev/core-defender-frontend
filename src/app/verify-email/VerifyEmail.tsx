@@ -103,7 +103,7 @@ export default function VerifyEmail({ token }: Props) {
               </Link>
             ) : (
               <Link
-                href="/dashboard"
+                href="/arene"
                 className="block w-full py-4 px-6 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-200 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 text-center"
               >
                 Accéder au jeu

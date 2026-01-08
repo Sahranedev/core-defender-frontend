@@ -327,7 +327,7 @@ export default function GameCanvas({
         isWinner ? "success" : "error",
         5000
       );
-      setTimeout(() => router.push("/dashboard"), 3000);
+      setTimeout(() => router.push("/arene"), 3000);
     });
 
     // Événement : Un joueur s'est déconnecté
@@ -368,7 +368,7 @@ export default function GameCanvas({
         );
 
         setTimeout(() => {
-          router.push("/dashboard");
+          router.push("/arene");
         }, 3000);
       }
     );
@@ -378,14 +378,14 @@ export default function GameCanvas({
       console.error("❌ Erreur:", error);
       showNotification(`❌ ${error.message}`, "error", 4000);
 
-      // Redirige vers le dashboard en cas d'erreur critique
+      // Redirige vers l'arène en cas d'erreur critique
       if (
         error.message.includes("n'est plus connecté") ||
         error.message.includes("introuvable") ||
         error.message.includes("déjà commencé") ||
         error.message.includes("terminée")
       ) {
-        setTimeout(() => router.push("/dashboard"), 2000);
+        setTimeout(() => router.push("/arene"), 2000);
       }
     });
 

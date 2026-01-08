@@ -24,7 +24,7 @@ export default async function GamePage({ params }: PageProps) {
   const gameResult = await fetchGameByRoomId(roomId);
 
   if (!gameResult.success || !gameResult.data) {
-    redirect("/dashboard");
+    redirect("/arene");
   }
 
   const game = gameResult.data;
@@ -39,17 +39,17 @@ export default async function GamePage({ params }: PageProps) {
     (game.status === "cancelled" || game.status === "finished") &&
     !isParticipant
   ) {
-    redirect("/dashboard");
+    redirect("/arene");
   }
 
   // Si la partie est annulée, même les participants sont redirigés
   if (game.status === "cancelled") {
-    redirect("/dashboard");
+    redirect("/arene");
   }
 
   // Si la partie est en cours et que l'utilisateur n'est pas un des joueurs
   if (game.status === "playing" && !isParticipant) {
-    redirect("/dashboard");
+    redirect("/arene");
   }
 
   // Détermine si l'utilisateur actuel est le créateur (player1)

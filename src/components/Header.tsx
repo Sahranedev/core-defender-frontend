@@ -16,7 +16,7 @@ export default function Header() {
   };
 
   const navItems = [
-    { href: "/dashboard", label: "Arène", icon: LuSwords },
+    { href: "/arene", label: "Arène", icon: LuSwords },
     { href: "/leaderboard", label: "Classements", icon: LuTrophy },
     { href: "/profile", label: "Profil", icon: LuUser },
   ];
@@ -25,7 +25,7 @@ export default function Header() {
     <header className="bg-zinc-950 border-b border-zinc-800/50 sticky top-0 z-50 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
-          <Link href="/dashboard" className="flex items-center gap-3 group">
+          <Link href="/arene" className="flex items-center gap-3 group">
             <div className="w-10 h-10 bg-zinc-900 border-2 border-cyan-500/30 rounded-lg flex items-center justify-center group-hover:border-cyan-500/50 transition-all">
               <LuShield className="w-5 h-5 text-cyan-400" />
             </div>
