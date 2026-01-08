@@ -92,7 +92,7 @@ export async function loginAction(
       };
     }
 
-    await createSession(data.token, email, data.userId?.toString());
+    await createSession(data.token);
   } catch (error) {
     console.error("Login error:", error);
     return {
@@ -101,7 +101,7 @@ export async function loginAction(
     };
   }
 
-  redirect("/dashboard");
+  redirect("/arene");
 }
 
 export async function signup(
@@ -166,7 +166,8 @@ export async function signup(
       };
     }
 
-    const data = await response.json();
+    // Inscription réussie - l'utilisateur doit vérifier son email
+    return { success: true };
   } catch (error) {
     console.error("Signup error:", error);
     return {
@@ -174,10 +175,48 @@ export async function signup(
     };
   }
 }
-export async function callCreateSession(
-  token: string,
-  email: string,
-  userId: string
-) {
-  await createSession(token, email, userId);
+/**
+ * Vérifie l'email de l'utilisateur et crée la session
+ */
+export async function verifyEmailAction(token: string) {
+  if (!token) {
+    return { success: false, error: "Token manquant" };
+  }
+
+  try {
+    const response = await fetch(
+      `${
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+      }/auth/verify-email`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: errorData.message || "Erreur lors de la vérification",
+      };
+    }
+
+    const data = await response.json();
+
+    if (!data.token) {
+      return { success: false, error: "Token JWT non reçu" };
+    }
+
+    await createSession(data.token);
+    return { success: true };
+  } catch (error) {
+    console.error("Verify email error:", error);
+    return {
+      success: false,
+      error: "Une erreur est survenue lors de la vérification",
+    };
+  }
 }

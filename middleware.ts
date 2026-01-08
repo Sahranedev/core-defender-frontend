@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { decrypt } from "@/app/lib/session";
-import { cookies } from "next/headers";
+import { verifySession } from "@/app/lib/session";
 
 // 1. Specify protected and public routes
 const protectedPrefixes = ["/dashboard", "/game/"];
@@ -14,9 +13,8 @@ export default async function middleware(req: NextRequest) {
   );
   const isAuthRoute = authRoutes.includes(path);
 
-  // 3. Decrypt the session from the cookie
-  const cookie = (await cookies()).get("session")?.value;
-  const session = await decrypt(cookie);
+  // 3. Vérifier la session via le JWT
+  const session = await verifySession();
 
   // 4. Redirect to /login if the user is not authenticated and tries to access protected route
   if (isProtectedRoute && !session?.userId) {

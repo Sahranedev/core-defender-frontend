@@ -148,3 +148,38 @@ export async function getGameByRoomId(token: string, roomId: string) {
     };
   }
 }
+
+/**
+ * Récupère le profil d'un utilisateur avec ses stats et son historique
+ */
+export async function getUserProfile(token: string, userId: number) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/profile`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: "Profil introuvable",
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error("Get user profile error:", error);
+    return {
+      success: false,
+      error: "Une erreur est survenue",
+    };
+  }
+}

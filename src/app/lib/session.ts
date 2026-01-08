@@ -1,123 +1,96 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import "server-only";
-import { SignJWT, jwtVerify } from "jose";
-import { SessionPayload } from "@/app/lib/definitions";
 import { cookies } from "next/headers";
-
-const secretKey = process.env.SESSION_SECRET;
-
-if (!secretKey && process.env.NODE_ENV === "production") {
-  throw new Error(
-    "SESSION_SECRET environment variable is required in production"
-  );
-}
-
-const encodedKey = new TextEncoder().encode(
-  secretKey || "dev_secret_key_change_in_production"
-);
 
 // Déterminer si nous sommes en environnement de production ou de développement
 const isProduction = process.env.NODE_ENV === "production";
 
-export async function encrypt(payload: SessionPayload) {
-  return new SignJWT(payload as any)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("2h")
-    .sign(encodedKey);
+/**
+ * Interface pour le payload décodé du JWT
+ */
+interface JwtPayload {
+  sub: string | number;
+  email: string;
+  exp?: number;
+  iat?: number;
 }
 
-export async function decrypt(session: string | undefined = "") {
+/**
+ * Décode un JWT sans vérifier la signature (la vérification est faite côté backend)
+ */
+function decodeJwt(token: string): JwtPayload | null {
   try {
-    const { payload } = await jwtVerify(session, encodedKey, {
-      algorithms: ["HS256"],
-    });
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1]));
     return payload;
   } catch {
-    console.log("Failed to verify session");
+    return null;
   }
 }
 
-export async function createSession(
-  jwtToken: string,
-  email: string,
-  userId?: string
-) {
-  const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 heures (aligné avec la durée du JWT)
+/**
+ * Crée une session en stockant le JWT dans un cookie sécurisé
+ */
+export async function createSession(jwtToken: string) {
+  const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 heures
 
-  // On stocke le token JWT dans un cookie sécurisé
   const cookieStore = await cookies();
   cookieStore.set("jwt_token", jwtToken, {
     httpOnly: true,
-    secure: isProduction, // Utiliser secure uniquement en production (HTTPS)
-    expires: expiresAt,
-    sameSite: "lax",
-    path: "/",
-  });
-
-  // On crée également notre propre session pour garder la compatibilité avec le code existant
-  const session = await encrypt({
-    userId: userId || "jwt_auth",
-    email,
-    expiresAt,
-  });
-  cookieStore.set("session", session, {
-    httpOnly: true,
-    secure: isProduction, // Utiliser secure uniquement en production (HTTPS)
+    secure: isProduction,
     expires: expiresAt,
     sameSite: "lax",
     path: "/",
   });
 }
 
-export async function updateSession() {
-  const session = (await cookies()).get("session")?.value;
-  const payload = await decrypt(session);
-
-  if (!session || !payload) {
-    return null;
-  }
-
-  const expires = new Date(Date.now() + 2 * 60 * 60 * 1000);
-
-  const cookieStore = await cookies();
-  cookieStore.set("session", session, {
-    httpOnly: true,
-    secure: isProduction, // Utiliser secure uniquement en production (HTTPS)
-    expires: expires,
-    sameSite: "lax",
-    path: "/",
-  });
-}
-
+/**
+ * Supprime la session (déconnexion)
+ */
 export async function deleteSession() {
   const cookieStore = await cookies();
-  cookieStore.delete("session");
   cookieStore.delete("jwt_token");
 }
 
+/**
+ * Récupère le token JWT depuis les cookies
+ */
 export async function getJwtToken() {
   const cookieStore = await cookies();
   return cookieStore.get("jwt_token")?.value;
 }
 
+/**
+ * Vérifie la session et retourne les infos utilisateur
+ */
 export async function verifySession() {
-  const cookieStore = await cookies();
-  const cookie = cookieStore.get("session")?.value;
-  const session = await decrypt(cookie);
+  const jwtToken = await getJwtToken();
 
-  if (!session?.userId) {
-    return null;
-  }
-
-  const jwtToken = cookieStore.get("jwt_token")?.value;
   if (!jwtToken) {
     return null;
   }
 
+  const payload = decodeJwt(jwtToken);
+  if (!payload) {
+    return null;
+  }
+
+  // Vérifier si le token n'est pas expiré
+  if (payload.exp && payload.exp * 1000 < Date.now()) {
+    return null;
+  }
+
   return {
-    userId: session.userId as string,
-    email: session.email as string,
+    userId: payload.sub?.toString(),
+    email: payload.email,
     jwt: jwtToken,
   };
+}
+
+/**
+ * Vérifie si l'utilisateur est authentifié (pour le middleware)
+ */
+export async function isAuthenticated(): Promise<boolean> {
+  const session = await verifySession();
+  return session !== null;
 }

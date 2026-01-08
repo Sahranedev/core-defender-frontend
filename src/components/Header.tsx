@@ -3,12 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { logout } from "@/app/actions/auth";
-import {
-  LuShield,
-  LuLayoutDashboard,
-  LuTrophy,
-  LuLogOut,
-} from "react-icons/lu";
+import { LuShield, LuSwords, LuTrophy, LuLogOut, LuUser } from "react-icons/lu";
 
 export default function Header() {
   const pathname = usePathname();
@@ -21,8 +16,9 @@ export default function Header() {
   };
 
   const navItems = [
-    { href: "/dashboard", label: "Dashboard", icon: LuLayoutDashboard },
+    { href: "/dashboard", label: "Arène", icon: LuSwords },
     { href: "/leaderboard", label: "Classements", icon: LuTrophy },
+    { href: "/profile", label: "Profil", icon: LuUser },
   ];
 
   return (
